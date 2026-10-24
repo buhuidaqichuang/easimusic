@@ -1,0 +1,10 @@
+﻿{
+    "android":  {
+                    "changelog":  "v1.1.204 update",
+                    "version":  "1.1.204",
+                    "downloadUrl":  "EzMusic-1.1.204.apk",
+                    "versionCode":  319,
+                    "releaseDate":  "2026-09-27",
+                    "forceUpdate":  false
+                }
+}

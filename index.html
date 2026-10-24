@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EzMusic · 你的随身音乐</title>
+    <style>
+        /* ============ 基础重置 ============ */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-deep: #0a0a12;
+            --bg-soft: #12121f;
+            --accent: #7c5cff;
+            --accent-2: #ff4d8d;
+            --accent-3: #00e0c6;
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.65);
+            --text-muted: rgba(255, 255, 255, 0.4);
+            --glass-bg: rgba(255, 255, 255, 0.06);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --glass-hover: rgba(255, 255, 255, 0.1);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', Roboto, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ============ 动态背景光斑 ============ */
+        .bg-orbs {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.5;
+            animation: floatOrb 18s ease-in-out infinite;
+        }
+        .orb-1 { width: 500px; height: 500px; background: var(--accent); top: -150px; left: -100px; animation-delay: 0s; }
+        .orb-2 { width: 400px; height: 400px; background: var(--accent-2); top: 30%; right: -120px; animation-delay: -6s; }
+        .orb-3 { width: 450px; height: 450px; background: var(--accent-3); bottom: -150px; left: 30%; animation-delay: -12s; opacity: 0.3; }
+
+        @keyframes floatOrb {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(40px, -30px) scale(1.1); }
+            66% { transform: translate(-30px, 40px) scale(0.95); }
+        }
+
+        /* 网格底纹 */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+            -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+            pointer-events: none;
+        }
+
+        /* ============ 主容器 ============ */
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 60px 24px;
+        }
+
+        /* ============ 顶部导航 ============ */
+        .nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 80px;
+            opacity: 0;
+            animation: fadeInDown 0.8s ease forwards;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .logo-icon {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 4px 20px rgba(124, 92, 255, 0.4);
+        }
+        .logo span { color: var(--accent-3); }
+
+        .nav-links { display: flex; gap: 28px; }
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--text-primary); }
+
+        /* ============ Hero 区域 ============ */
+        .hero {
+            text-align: center;
+            margin-bottom: 100px;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            border-radius: 100px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 28px;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease 0.1s forwards;
+        }
+        .badge-dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: var(--accent-3);
+            box-shadow: 0 0 8px var(--accent-3);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        .hero h1 {
+            font-size: clamp(36px, 6vw, 68px);
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -2px;
+            margin-bottom: 20px;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease 0.2s forwards;
+        }
+        .hero h1 .gradient-text {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 50%, var(--accent-3) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero p {
+            font-size: clamp(16px, 2vw, 19px);
+            color: var(--text-secondary);
+            max-width: 560px;
+            margin: 0 auto 40px;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease 0.35s forwards;
+        }
+
+        /* ============ 下载卡片 ============ */
+        .download-card {
+            max-width: 720px;
+            margin: 0 auto;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            animation: fadeInUp 0.8s ease 0.5s forwards;
+            position: relative;
+            overflow: hidden;
+        }
+        .download-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        }
+
+        .platform-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 32px;
+            justify-content: center;
+        }
+        .platform-tab {
+            padding: 10px 24px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid transparent;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .platform-tab.active {
+            background: rgba(124, 92, 255, 0.15);
+            border-color: rgba(124, 92, 255, 0.4);
+            color: var(--text-primary);
+        }
+        .platform-tab:hover:not(.active) {
+            background: rgba(255,255,255,0.08);
+            color: var(--text-primary);
+        }
+
+        .version-info {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .version-item {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            padding: 18px 16px;
+            text-align: center;
+        }
+        .version-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+        .version-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .download-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+            color: white;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(124, 92, 255, 0.35);
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(124, 92, 255, 0.5);
+        }
+        .download-btn:active { transform: translateY(0); }
+        .download-btn .btn-icon { font-size: 22px; }
+        .download-btn .btn-arrow {
+            margin-left: auto;
+            transition: transform 0.3s ease;
+        }
+        .download-btn:hover .btn-arrow { transform: translateX(4px); }
+
+        .secondary-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 14px;
+            padding: 14px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+            font-size: 15px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.25s ease;
+        }
+        .secondary-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: var(--text-primary);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        /* ============ 功能特性 ============ */
+        .features {
+            margin-bottom: 100px;
+        }
+        .section-title {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+        .section-title h2 {
+            font-size: clamp(28px, 4vw, 40px);
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 12px;
+        }
+        .section-title p {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+        }
+        .feature {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            padding: 32px 24px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .feature:hover {
+            transform: translateY(-6px);
+            border-color: rgba(124, 92, 255, 0.3);
+            background: var(--glass-hover);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+        }
+        .feature-icon {
+            width: 52px; height: 52px;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 26px;
+            margin-bottom: 18px;
+            background: linear-gradient(135deg, rgba(124,92,255,0.2), rgba(255,77,141,0.2));
+            border: 1px solid rgba(124,92,255,0.25);
+        }
+        .feature:nth-child(2) .feature-icon {
+            background: linear-gradient(135deg, rgba(0,224,198,0.2), rgba(124,92,255,0.2));
+            border-color: rgba(0,224,198,0.25);
+        }
+        .feature:nth-child(3) .feature-icon {
+            background: linear-gradient(135deg, rgba(255,77,141,0.2), rgba(255,200,77,0.2));
+            border-color: rgba(255,77,141,0.25);
+        }
+        .feature:nth-child(4) .feature-icon {
+            background: linear-gradient(135deg, rgba(0,224,198,0.2), rgba(77,200,255,0.2));
+            border-color: rgba(0,224,198,0.25);
+        }
+        .feature h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .feature p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* ============ 页脚 ============ */
+        footer {
+            text-align: center;
+            padding: 40px 0 20px;
+            border-top: 1px solid var(--glass-border);
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+        footer a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        footer a:hover { color: var(--text-primary); }
+
+        /* ============ 动画 ============ */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ============ 响应式 ============ */
+        @media (max-width: 640px) {
+            .container { padding: 32px 16px; }
+            .nav { margin-bottom: 50px; }
+            .nav-links { display: none; }
+            .hero { margin-bottom: 60px; }
+            .download-card { padding: 28px 20px; border-radius: 18px; }
+            .version-info { grid-template-columns: 1fr; gap: 10px; }
+            .version-item { padding: 14px; }
+            .features { margin-bottom: 60px; }
+            .features-grid { grid-template-columns: 1fr; gap: 14px; }
+            .feature { padding: 24px 20px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 动态背景 -->
+    <div class="bg-grid"></div>
+    <div class="bg-orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <div class="container">
+        <!-- 导航 -->
+        <nav class="nav">
+            <div class="logo">
+                <div class="logo-icon">🎵</div>
+                Ez<span>Music</span>
+            </div>
+            <div class="nav-links">
+                <a href="#features">功能特性</a>
+                <a href="#download">下载</a>
+            </div>
+        </nav>
+
+        <!-- Hero -->
+        <section class="hero">
+            <div class="badge">
+                <span class="badge-dot"></span>
+                <span id="badge-text">最新版本 v1.1.183 已发布</span>
+            </div>
+            <h1>你的随身<br><span class="gradient-text">音乐播放器</span></h1>
+            <p>轻量、纯净、无广告。海量曲库随心搜，逐字歌词跟唱体验，跨设备同步你的音乐收藏。</p>
+        </section>
+
+        <!-- 下载卡片 -->
+        <section id="download" class="download-card">
+            <div class="platform-tabs">
+                <div class="platform-tab active" data-platform="android">📱 Android</div>
+                <div class="platform-tab" data-platform="windows">💻 Windows</div>
+            </div>
+
+            <!-- Android 面板 -->
+            <div class="platform-panel" id="panel-android">
+                <div class="version-info">
+                    <div class="version-item">
+                        <div class="version-label">版本</div>
+                        <div class="version-value" id="android-version">1.1.183</div>
+                    </div>
+                    <div class="version-item">
+                        <div class="version-label">版本代码</div>
+                        <div class="version-value" id="android-version-code">298</div>
+                    </div>
+                    <div class="version-item">
+                        <div class="version-label">发布日期</div>
+                        <div class="version-value" id="android-release-date">2026-09-25</div>
+                    </div>
+                </div>
+                <a href="EzMusic-1.1.183.apk" class="download-btn" id="android-download">
+                    <span class="btn-icon">⬇️</span>
+                    <span>下载 Android APK</span>
+                    <span class="btn-arrow">→</span>
+                </a>
+            </div>
+
+            <!-- Windows 面板 -->
+            <div class="platform-panel" id="panel-windows" style="display:none;">
+                <div class="version-info" style="grid-template-columns:1fr;">
+                    <div class="version-item">
+                        <div class="version-label">平台</div>
+                        <div class="version-value">Windows</div>
+                    </div>
+                </div>
+                <div class="download-btn" style="background:#2a2a38;color:#9a9a9a;cursor:not-allowed;pointer-events:none;box-shadow:none;border:1px solid var(--glass-border);">
+                    <span class="btn-icon">🚧</span>
+                    <span>Windows 版开发中</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 功能特性 -->
+        <section id="features" class="features">
+            <div class="section-title">
+                <h2>为什么选择 EzMusic</h2>
+                <p>为音乐爱好者打造的纯净体验</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature">
+                    <div class="feature-icon">🔍</div>
+                    <h3>强大搜索</h3>
+                    <p>多平台音乐源聚合搜索，一键找到你想要的歌曲，结果秒级呈现。</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🎤</div>
+                    <h3>逐字歌词</h3>
+                    <p>支持逐字卡拉OK歌词，跟随节奏高亮，沉浸式跟唱体验。</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">❤️</div>
+                    <h3>我喜欢的歌</h3>
+                    <p>收藏喜欢的歌曲，云端同步，换设备也能随时续听。</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🎧</div>
+                    <h3>纯净播放</h3>
+                    <p>无广告、无推送、无多余权限，专注音乐本身的流畅播放。</p>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>© 2026 EzMusic · 仅供学习交流使用</p>
+        </footer>
+    </div>
+
+    <script>
+        // 平台切换
+        document.querySelectorAll('.platform-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.platform-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                const platform = this.dataset.platform;
+                document.querySelectorAll('.platform-panel').forEach(p => p.style.display = 'none');
+                document.getElementById('panel-' + platform).style.display = 'block';
+            });
+        });
+
+        // 加载版本信息
+        window.addEventListener('DOMContentLoaded', function() {
+            fetch('version.json')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.android) {
+                        const v = data.android;
+                        document.getElementById('android-version').textContent = v.version || '—';
+                        document.getElementById('android-version-code').textContent = v.versionCode || '—';
+                        document.getElementById('android-release-date').textContent = v.releaseDate || '—';
+                        if (v.downloadUrl) {
+                            document.getElementById('android-download').href = v.downloadUrl;
+                        }
+                        if (v.version) {
+                            document.getElementById('badge-text').textContent = '最新版本 v' + v.version + ' 已发布';
+                        }
+                    }
+                })
+                .catch(error => console.error('Failed to load version info:', error));
+        });
+    </script>
+</body>
+</html>
